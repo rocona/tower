@@ -143,6 +143,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<TowerAppI
 
   const cipher = new SecretCipher(rawEncKey);
   const repo = new TowerRepository(db, cipher);
+  await repo.pruneInformationalNodes();
   await repo.backfillNodeMetadata();
   const auth = new AuthService(config, repo);
   const loginLimiter = new MemoryRateLimiter({

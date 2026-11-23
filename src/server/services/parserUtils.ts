@@ -9,12 +9,20 @@ const INFORMATIONAL_PROXY_NAME_PATTERN =
 const CLIENT_INSTRUCTION_PROXY_NAME_PATTERN =
   /^(?:(?:推荐(?:clash|karing|小火箭|客户端)|surge客户端不支持|若无[^,]*更换客户端)|(?:安卓|android|windows|电脑|pc|ios|iphone|ipad|mac|小火箭|shadowrocket|clash(?:meta|verge)?)[^,]*客户端)/iu;
 
+const UPDATE_NOTICE_PROXY_NAME_PATTERN =
+  /(?:若|如|如果).{0,8}(?:无法|不能|失效|连不上|不可用).{0,20}(?:更新|更换|升级|下载|刷新)|(?:请|务必|记得|注意).{0,6}(?:更新|更换|升级|刷新).{0,12}(?:节点|订阅|客户端|配置)/iu;
+
+const SERVICE_PLACEHOLDER_PROXY_NAME_PATTERN =
+  /^[\s\-—–·•*_|]*(?:(?:youtube|yt|油管)[^,，;；]{0,12}(?:去广告|免广告|广告拦截)|(?:去广告|广告过滤|广告拦截|adblock))/iu;
+
 export function isInformationalNodeName(name: string): boolean {
   const normalized = String(name ?? '').trim();
   if (!normalized) return false;
   return (
     INFORMATIONAL_PROXY_NAME_PATTERN.test(normalized) ||
-    CLIENT_INSTRUCTION_PROXY_NAME_PATTERN.test(normalized)
+    CLIENT_INSTRUCTION_PROXY_NAME_PATTERN.test(normalized) ||
+    UPDATE_NOTICE_PROXY_NAME_PATTERN.test(normalized) ||
+    SERVICE_PLACEHOLDER_PROXY_NAME_PATTERN.test(normalized)
   );
 }
 

@@ -13,6 +13,7 @@ import type { DbClient } from './client.js';
 import { createDefaultRoutingProfile } from './defaults.js';
 import { SecretCipher, generateSecureToken, sha256Hex } from '../security/crypto.js';
 import { detectRegionAndMeta } from '../services/regionDetector.js';
+import { isInformationalNodeName } from '../services/parserUtils.js';
 
 export interface ParsedNodeInput {
   fingerprint: string;
@@ -235,6 +236,38 @@ export class TowerRepository {
       updated += 1;
     }
     return updated;
+  }
+
+  async pruneInformationalNodes(): Promise<number> {
+    const res = await this.db.query<{
+      id: string;
+      source_id: string;
+      original_name: string;
+    }>('SELECT id, source_id, original_name FROM nodes');
+    const removable = res.rows.filter((row) => isInformationalNodeName(row.original_name));
+    if (!removable.length) return 0;
+
+    const removedBySource = new Map<string, number>();
+    for (const row of removable) {
+      removedBySource.set(row.source_id, (removedBySource.get(row.source_id) ?? 0) + 1);
+    }
+
+    await this.db.transaction(async (tx) => {
+      for (const row of removable) {
+        await tx.query('DELETE FROM nodes WHERE id = $1', [row.id]);
+      }
+      for (const [sourceId, count] of removedBySource) {
+        await tx.query(
+          `UPDATE sources
+           SET node_count = (SELECT COUNT(*) FROM nodes WHERE source_id = $1),
+               filtered_count = filtered_count + $2,
+               updated_at = NOW()
+           WHERE id = $1`,
+          [sourceId, count],
+        );
+      }
+    });
+    return removable.length;
   }
 
   async getSource(id: string): Promise<SourceRecord | null> {

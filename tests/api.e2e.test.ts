@@ -161,4 +161,35 @@ describe('Tower API E2E (PGlite PostgreSQL)', () => {
     expect(node?.region).toBe('US');
     expect(node?.multiplier).toBe(1);
   });
+
+  it('prunes informational nodes that were stored before filtering rules existed', async () => {
+    const source = await instance.repo.ensureManualSource();
+    const config = {
+      protocol: 'ss' as const,
+      host: '1.2.3.9',
+      port: 8388,
+      method: 'aes-256-gcm',
+      password: 'secret',
+      udp: true,
+    };
+    const inserted = await instance.repo.addManualNodes(source.id, [
+      {
+        fingerprint: 'informational-node-test',
+        originalName: '-若无法使用请更新节点-',
+        protocol: 'ss',
+        host: config.host,
+        port: config.port,
+        config,
+        detectedRegion: 'OTHER',
+        multiplier: null,
+        tags: [],
+      },
+    ]);
+    const junk = inserted.find((node) => node.originalName === '-若无法使用请更新节点-');
+    expect(junk).toBeTruthy();
+
+    const removed = await instance.repo.pruneInformationalNodes();
+    expect(removed).toBeGreaterThan(0);
+    expect(await instance.repo.getNode(junk!.id)).toBeNull();
+  });
 });

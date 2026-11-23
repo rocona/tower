@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseSubscriptionPayload } from '../src/server/services/parser.js';
 import { detectRegionAndMeta } from '../src/server/services/regionDetector.js';
+import { isInformationalNodeName } from '../src/server/services/parserUtils.js';
 import { validateTargetHost, isPrivateOrReservedIp, SsrfBlockedError } from '../src/server/security/ssrf.js';
 
 describe('Subscription parser', () => {
@@ -93,6 +94,31 @@ proxies:
       expect(meta.region, item.name).toBe(item.region);
       expect(meta.multiplier, item.name).toBe(item.multiplier);
     }
+  });
+
+  it('filters update notices and service placeholder entries', () => {
+    const invalidNames = [
+      '-若无法使用请更新节点-',
+      'Youtube去广告1',
+      '若无法使用请更新客户端',
+      '如果无法连接请更换订阅',
+    ];
+    for (const name of invalidNames) {
+      expect(isInformationalNodeName(name), name).toBe(true);
+    }
+    expect(isInformationalNodeName('🇺🇸 美西 YouTube 4K')).toBe(false);
+
+    const payload = [
+      ...invalidNames.map(
+        (name, index) =>
+          `ss://YWVzLTI1Ni1nY206c2VjcmV0@1.2.3.${index + 10}:8388#${encodeURIComponent(name)}`,
+      ),
+      `ss://YWVzLTI1Ni1nY206c2VjcmV0@1.2.3.4:8388#${encodeURIComponent('🇭🇰 香港 IPLC 0.1x')}`,
+    ].join('\n');
+    const result = parseSubscriptionPayload(payload, { filterNotices: true });
+    expect(result.nodes).toHaveLength(1);
+    expect(result.nodes[0].detectedRegion).toBe('HK');
+    expect(result.filteredCount).toBe(4);
   });
 
   it('blocks private/loopback/Fake-IP URLs for SSRF protection unless explicitly allowed', async () => {
