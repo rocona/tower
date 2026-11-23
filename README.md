@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/brand/tower-icon.svg" width="88" height="88" alt="Tower logo" />
+</p>
+
 # Tower · 塔台
 
 一款网页版多客户端代理订阅聚合与配置转换控制台，面向 Docker / Coolify 自托管部署，采用 **PostgreSQL** 持久化与极简黑白瑞士网格视觉体系。

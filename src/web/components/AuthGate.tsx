@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, ShieldCheck, Moon, Sun } from 'lucide-react';
 import type { SecurityStatus } from '../../shared/types.js';
 import { api } from '../api.js';
+import { TowerMark } from './TowerMark.js';
 
 interface AuthGateProps {
   status: SecurityStatus;
@@ -50,9 +51,7 @@ export function AuthGate({ status, dark, onToggleTheme, onAuthenticated }: AuthG
     <div className="min-h-screen bg-[#FFFFFF] text-[#0A0A0A] dark:bg-[#0A0A0B] dark:text-[#FAFAFA] flex flex-col">
       <header className="h-14 border-b border-[#E5E7EB] dark:border-[#242429] px-4 sm:px-6 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-6 h-6 rounded border-[1.5px] border-[#0A0A0A] dark:border-[#FAFAFA] grid place-items-center">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] dark:bg-[#F97316]" />
-          </div>
+          <TowerMark className="h-8 w-8 shrink-0" />
           <span className="font-bold tracking-[0.14em] text-sm">TOWER</span>
           <span className="text-xs text-[#6B7280] dark:text-[#9CA3AF] border-l border-[#E5E7EB] dark:border-[#242429] pl-2.5">
             塔台控制台

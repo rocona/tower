@@ -22,6 +22,7 @@ import { ExportView } from './components/ExportView.js';
 import { NodesView } from './components/NodesView.js';
 import { RulesView } from './components/RulesView.js';
 import { SourcesView } from './components/SourcesView.js';
+import { TowerMark } from './components/TowerMark.js';
 
 type TabId = 'nodes' | 'sources' | 'rules' | 'export';
 
@@ -149,9 +150,7 @@ export function App() {
       <header className="sticky top-0 z-30 border-b border-[#E5E7EB] bg-[#FFFFFF]/95 backdrop-blur dark:border-[#242429] dark:bg-[#0A0A0B]/95">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-6 h-6 rounded border-[1.5px] border-[#0A0A0A] dark:border-[#FAFAFA] grid place-items-center">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C] dark:bg-[#F97316]" />
-            </div>
+            <TowerMark className="h-8 w-8 shrink-0" />
             <span className="font-bold tracking-[0.14em] text-sm">TOWER</span>
             <span className="hidden sm:inline text-xs text-[#6B7280] dark:text-[#9CA3AF] border-l border-[#E5E7EB] dark:border-[#242429] pl-2.5">
               塔台
