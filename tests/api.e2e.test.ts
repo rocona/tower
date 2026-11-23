@@ -131,4 +131,34 @@ describe('Tower API E2E (PGlite PostgreSQL)', () => {
     });
     expect(newSub.statusCode).toBe(200);
   });
+
+  it('backfills stale region and multiplier metadata for existing nodes', async () => {
+    const importRes = await instance.app.inject({
+      method: 'POST',
+      url: '/api/sources/manual/import',
+      headers: { cookie: sessionCookie },
+      payload: {
+        text: 'ss://YWVzLTI1Ni1nY206c2VjcmV0@1.2.3.4:8388#x1.0%20%E7%BE%8E%E8%A5%BF%20-%20%E4%B8%AD%E8%BD%AC1',
+      },
+    });
+    expect(importRes.statusCode).toBe(201);
+    const target = (importRes.json().nodes as Array<{ id: string; originalName: string }>).find(
+      (node) => node.originalName === 'x1.0 美西 - 中转1',
+    );
+    expect(target).toBeTruthy();
+
+    await instance.db.query(
+      `UPDATE nodes
+       SET detected_region = 'OTHER', multiplier = NULL, tags = '[]'::jsonb
+       WHERE id = $1`,
+      [target!.id],
+    );
+
+    const updated = await instance.repo.backfillNodeMetadata();
+    expect(updated).toBeGreaterThan(0);
+
+    const node = await instance.repo.getNode(target!.id);
+    expect(node?.region).toBe('US');
+    expect(node?.multiplier).toBe(1);
+  });
 });

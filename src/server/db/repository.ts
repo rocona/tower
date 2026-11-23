@@ -12,6 +12,7 @@ import type {
 import type { DbClient } from './client.js';
 import { createDefaultRoutingProfile } from './defaults.js';
 import { SecretCipher, generateSecureToken, sha256Hex } from '../security/crypto.js';
+import { detectRegionAndMeta } from '../services/regionDetector.js';
 
 export interface ParsedNodeInput {
   fingerprint: string;
@@ -201,6 +202,39 @@ export class TowerRepository {
       'SELECT * FROM sources ORDER BY kind ASC, created_at ASC',
     );
     return res.rows.map((row) => this.mapSource(row));
+  }
+
+  async backfillNodeMetadata(): Promise<number> {
+    const res = await this.db.query<{
+      id: string;
+      original_name: string;
+      host: string;
+      detected_region: string;
+      multiplier: number | null;
+      tags: string[] | string;
+    }>('SELECT id, original_name, host, detected_region, multiplier, tags FROM nodes');
+
+    let updated = 0;
+    for (const row of res.rows) {
+      const meta = detectRegionAndMeta(row.original_name, row.host);
+      const previousTags = parseJsonArray<string>(row.tags);
+      const multiplierChanged =
+        (row.multiplier === null || row.multiplier === undefined
+          ? null
+          : Number(row.multiplier)) !== meta.multiplier;
+      const tagsChanged = JSON.stringify(previousTags) !== JSON.stringify(meta.tags);
+      if (row.detected_region === meta.region && !multiplierChanged && !tagsChanged) {
+        continue;
+      }
+      await this.db.query(
+        `UPDATE nodes
+         SET detected_region = $2, multiplier = $3, tags = $4::jsonb, updated_at = NOW()
+         WHERE id = $1`,
+        [row.id, meta.region, meta.multiplier, JSON.stringify(meta.tags)],
+      );
+      updated += 1;
+    }
+    return updated;
   }
 
   async getSource(id: string): Promise<SourceRecord | null> {

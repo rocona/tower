@@ -71,6 +71,30 @@ proxies:
     expect(clashRes.nodes[0].host).toBe('uk.example.com');
   });
 
+  it('detects Chinese region aliases and prefix multipliers', () => {
+    const cases: Array<{
+      name: string;
+      region: string;
+      multiplier: number | null;
+    }> = [
+      { name: 'x1.0 美西 - 中转1', region: 'US', multiplier: 1 },
+      { name: 'x2 美东 - 直连1', region: 'US', multiplier: 2 },
+      { name: '×0.1 洛杉矶 IPLC', region: 'US', multiplier: 0.1 },
+      { name: '台北 家宽 1.5x', region: 'TW', multiplier: 1.5 },
+      { name: '马来西亚 吉隆坡', region: 'MY', multiplier: null },
+      { name: '印度尼西亚 雅加达', region: 'ID', multiplier: null },
+      { name: '西班牙 马德里', region: 'ES', multiplier: null },
+      { name: '南非 约翰内斯堡', region: 'ZA', multiplier: null },
+      { name: '香港 HKG 0.5x', region: 'HK', multiplier: 0.5 },
+    ];
+
+    for (const item of cases) {
+      const meta = detectRegionAndMeta(item.name);
+      expect(meta.region, item.name).toBe(item.region);
+      expect(meta.multiplier, item.name).toBe(item.multiplier);
+    }
+  });
+
   it('blocks private/loopback/Fake-IP URLs for SSRF protection unless explicitly allowed', async () => {
     expect(isPrivateOrReservedIp('127.0.0.1')).toBe(true);
     expect(isPrivateOrReservedIp('192.168.1.10')).toBe(true);
