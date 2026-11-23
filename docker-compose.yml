@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tower}
+      POSTGRES_USER: ${POSTGRES_USER:-tower}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tower_change_me}
+    volumes:
+      - tower_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tower} -d ${POSTGRES_DB:-tower}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  tower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${TOWER_IMAGE:-tower:local}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      PORT: 8080
+      HOST: 0.0.0.0
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-tower}:${POSTGRES_PASSWORD:-tower_change_me}@postgres:5432/${POSTGRES_DB:-tower}}
+      DATABASE_SSL: ${DATABASE_SSL:-disable}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      ALLOW_PRIVATE_FETCH: ${ALLOW_PRIVATE_FETCH:-false}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+
+volumes:
+  tower_pgdata:
